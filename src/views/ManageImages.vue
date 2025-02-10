@@ -96,7 +96,9 @@ const listImages = () => {
     limit: 100,
     delimiter: delimiter.value
   }).then((data) => {
-    uploadedImages.value = data.list
+    uploadedImages.value = data.list.sort((a, b) => {
+      return b.uploadedAt - a.uploadedAt;
+    });
     if (data.prefixes && data.prefixes.length) {
       prefixes.value = data.prefixes
       if (delimiter.value !== '/') {
