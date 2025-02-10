@@ -96,7 +96,9 @@ const listImages = () => {
     limit: 100,
     delimiter: delimiter.value
   }).then((data) => {
+    console.log('返回的图片列表：', data.list); // 添加这行来查看数据
     uploadedImages.value = data.list.sort((a, b) => {
+      if (!a.uploadedAt || !b.uploadedAt) return 0;  // 处理可能不存在 uploadedAt 的情况
       return b.uploadedAt - a.uploadedAt;
     });
     if (data.prefixes && data.prefixes.length) {
