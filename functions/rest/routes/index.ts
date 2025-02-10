@@ -77,7 +77,8 @@ router.post('/list', auth, async (req: Request, env: Env) => {
             url: `/rest/${it.key}`,
             copyUrl: `${env.COPY_URL}/${it.key}`,
             key: it.key,
-            size: it.size
+            size: it.size,
+            uploadedAt: it.uploaded?.getTime() || 0  // 添加这行，使用 R2 对象的 uploaded 时间
         }
     })
     return json(Ok(<ImgList>{

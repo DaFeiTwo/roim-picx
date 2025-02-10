@@ -18,8 +18,9 @@ export interface ImgItem {
 	key : string
 	url : string
 	size: number
-
+	copyUrl: string
 	filename ?: string
+	uploadedAt?: number  // 添加这个字段
 }
 
 export interface ImgList {
