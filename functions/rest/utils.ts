@@ -57,25 +57,30 @@ export async function getFilePath(val: string, time: number): Promise<string> {
 
 // TinyPNG压缩图片
 export async function compressImage(imageBuffer: ArrayBuffer, apiKey: string): Promise<ArrayBuffer> {
+    if (!apiKey) {
+        throw new Error('TinyPNG API key is not configured');
+    }
+
     const auth = btoa(`api:${apiKey}`);
     
-    // 第一步：上传图片到TinyPNG
+    // 上传图片到TinyPNG
     const uploadResponse = await fetch('https://api.tinify.com/shrink', {
         method: 'POST',
         headers: {
             'Authorization': `Basic ${auth}`,
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: imageBuffer
+        body: new Uint8Array(imageBuffer)
     });
 
     if (!uploadResponse.ok) {
-        throw new Error(`TinyPNG compression failed: ${uploadResponse.statusText}`);
+        const error = await uploadResponse.json();
+        throw new Error(`TinyPNG compression failed: ${error.message || uploadResponse.statusText}`);
     }
 
     const uploadResult = await uploadResponse.json();
 
-    // 第二步：下载压缩后的图片
+    // 下载压缩后的图片
     const downloadResponse = await fetch(uploadResult.output.url);
     
     if (!downloadResponse.ok) {
