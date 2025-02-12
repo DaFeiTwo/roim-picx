@@ -54,3 +54,33 @@ export async function getFilePath(val: string, time: number): Promise<string> {
     return `${year}/${month}/${fileName}`
 
 }
+
+// TinyPNG压缩图片
+export async function compressImage(imageBuffer: ArrayBuffer, apiKey: string): Promise<ArrayBuffer> {
+    const auth = btoa(`api:${apiKey}`);
+    
+    // 第一步：上传图片到TinyPNG
+    const uploadResponse = await fetch('https://api.tinify.com/shrink', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: imageBuffer
+    });
+
+    if (!uploadResponse.ok) {
+        throw new Error(`TinyPNG compression failed: ${uploadResponse.statusText}`);
+    }
+
+    const uploadResult = await uploadResponse.json();
+
+    // 第二步：下载压缩后的图片
+    const downloadResponse = await fetch(uploadResult.output.url);
+    
+    if (!downloadResponse.ok) {
+        throw new Error(`Failed to download compressed image: ${downloadResponse.statusText}`);
+    }
+
+    return await downloadResponse.arrayBuffer();
+}

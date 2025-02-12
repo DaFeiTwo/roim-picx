@@ -4,6 +4,7 @@ export interface Env {
   AUTH_TOKEN: string
   COPY_URL: string
   R2: R2Bucket
+  TINYPNG_API_KEY: string // tinypng压缩图片
 }
 
 export const onRequest: PagesFunction<Env> = async (context : EventContext) => {

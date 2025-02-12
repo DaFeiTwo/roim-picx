@@ -95,30 +95,55 @@ router.post('/upload', auth, async (req: Request, env: Env) => {
     const images = files.getAll("files")
     const errs = []
     const urls = Array<ImgItem>()
+    
     for (let item of images) {
         const fileType = item.type
         if (!checkFileType(fileType)) {
             errs.push(`${fileType} not support.`)
             continue
         }
-        const time = new Date().getTime()
-        const objecPath = await getFilePath(fileType, time)
-        const header = new Headers()
-        header.set("content-type", fileType)
-        header.set("content-length", `${item.size}`)
-        const object = await env.R2.put(objecPath, item.stream(), {
-            httpMetadata: header,
-        }) as R2Object
-        if (object || object.key) {
-            urls.push({
-                key: object.key,
-                size: object.size,
-                copyUrl: `${env.COPY_URL}/${object.key}`,
-                url: `/rest/${object.key}`,
-                filename: item.name
+
+        try {
+            // 读取文件内容
+            const arrayBuffer = await item.arrayBuffer();
+            
+            // 压缩图片
+            let compressedBuffer = arrayBuffer;
+            if (fileType === 'image/jpeg' || fileType === 'image/png') {
+                try {
+                    compressedBuffer = await compressImage(arrayBuffer, env.TINYPNG_API_KEY);
+                } catch (error) {
+                    console.error('Image compression failed:', error);
+                    // 如果压缩失败，使用原始图片继续
+                }
+            }
+
+            const time = new Date().getTime()
+            const objectPath = await getFilePath(fileType, time)
+            
+            const header = new Headers()
+            header.set("content-type", fileType)
+            header.set("content-length", `${compressedBuffer.byteLength}`)
+            
+            const object = await env.R2.put(objectPath, compressedBuffer, {
+                httpMetadata: header,
             })
+
+            if (object || object.key) {
+                urls.push({
+                    key: object.key,
+                    size: object.size,
+                    copyUrl: `${env.COPY_URL}/${object.key}`,
+                    url: `/rest/${object.key}`,
+                    filename: item.name
+                })
+            }
+        } catch (error) {
+            errs.push(`Failed to process ${item.name}: ${error.message}`);
+            continue;
         }
     }
+    
     return json(Build(urls, errs.toString()))
 })
 
